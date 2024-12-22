@@ -8,7 +8,7 @@ router.post('/register', async (req, res) => {
     if(result.status){
         res.status(200).json(result.data);
     }else{
-        res.status(400).json(result.data);
+        res.status(500).json(result.data);
     }
 });
 
@@ -17,7 +17,7 @@ router.post('/login', async (req, res) => {
     if(result.status){
         res.status(200).json(result.data);
     }else{
-        res.status(400).json(result.data);
+        res.status(500).json(result.data);
     }
 });
 
