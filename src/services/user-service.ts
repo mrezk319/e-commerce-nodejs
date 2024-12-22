@@ -118,7 +118,7 @@ export const login = async (data: LoginParam) => {
     }
 }
 
-const keyHash = 'fHsM4Uq7eOWStmBDGhOW9w0TVjkI7gzk';
+export const keyHash = 'fHsM4Uq7eOWStmBDGhOW9w0TVjkI7gzk';
 const generateJWT = (data: any) => {
 
     return jwt.sign(data, keyHash);
