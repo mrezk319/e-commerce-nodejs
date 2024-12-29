@@ -81,11 +81,94 @@ export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToC
             price: quantity * product.price
         });
     }
+    
+    cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
 
     const updatedCart = await cart.save();
     return {
         success: true,
         message: "Item added successfully",
+        data: updatedCart
+    };
+}
+
+export async function updateItemToCart({ userId, productId, quantity }: {
+    userId: string;
+    productId: string;
+    quantity: number;
+}) {
+    const cart = await CartModel.findOne({ 
+        userId, 
+        status: CartStatus.ACTIVE 
+    });
+
+    if (!cart) {
+        return {
+            success: false,
+            message: 'No active cart found'
+        };
+    }
+
+    const itemIndex = cart.items.findIndex(item => 
+        item.productId.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+        return {
+            success: false,
+            message: 'Product not found in cart'
+        };
+    }
+
+    if (quantity <= 0) {
+        cart.items.splice(itemIndex, 1);
+    } else {
+        const product = await productMoel.findById(productId);
+        cart.items[itemIndex].quantity = quantity;
+        cart.items[itemIndex].price = quantity * product.price;
+    }
+
+    cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
+    const updatedCart = await cart.save();
+    return {
+        success: true,
+        message: 'Cart updated successfully',
+        data: updatedCart
+    };
+}
+
+export async function deleteItemFromCart({ userId, productId }: {
+    userId: string;
+    productId: string;
+}) {
+    const cart = await getActiveCarts({ userId });
+
+    if (!cart) {
+        return {
+            success: false,
+            message: 'No active cart found'
+        };
+    }
+
+    const itemIndex = cart.items.findIndex(item => 
+        item.productId.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+        return {
+            success: false,
+            message: 'Product not found in cart'
+        };
+    }
+
+    cart.items.splice(itemIndex, 1);
+
+    cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
+
+    const updatedCart = await cart.save();
+    return {
+        success: true,
+        message: 'Item removed from cart successfully',
         data: updatedCart
     };
 }

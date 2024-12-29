@@ -28,7 +28,8 @@ const cartSchema = new Schema({
         productId: { type: Schema.Types.ObjectId, ref: 'Product' },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true }
-    }]
+    }],
+    totalAmount: { type: Number, required: true, default: 0 }
 });
 
 export const CartModel = model<ICart>('Cart', cartSchema);
