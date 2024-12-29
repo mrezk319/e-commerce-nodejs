@@ -92,6 +92,15 @@ export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToC
     };
 }
 
+async function recalculateCartPrices(cart: any) {
+    for (const item of cart.items) {
+        const product = await productMoel.findById(item.productId);
+        item.price = item.quantity * product.price;
+    }
+    cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
+    return cart;
+}
+
 export async function updateItemToCart({ userId, productId, quantity }: {
     userId: string;
     productId: string;
@@ -123,12 +132,10 @@ export async function updateItemToCart({ userId, productId, quantity }: {
     if (quantity <= 0) {
         cart.items.splice(itemIndex, 1);
     } else {
-        const product = await productMoel.findById(productId);
         cart.items[itemIndex].quantity = quantity;
-        cart.items[itemIndex].price = quantity * product.price;
     }
 
-    cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
+    await recalculateCartPrices(cart);
     const updatedCart = await cart.save();
     return {
         success: true,
@@ -169,6 +176,28 @@ export async function deleteItemFromCart({ userId, productId }: {
     return {
         success: true,
         message: 'Item removed from cart successfully',
+        data: updatedCart
+    };
+}
+
+export async function clearCart({ userId }: { userId: string }) {
+    const cart = await getActiveCarts({ userId });
+
+    if (!cart) {
+        return {
+            success: false,
+            message: 'No active cart found'
+        };
+    }
+
+    // مسح جميع العناصر من السلة
+    cart.items = [];
+    cart.totalAmount = 0;
+
+    const updatedCart = await cart.save();
+    return {
+        success: true,
+        message: 'Cart cleared successfully',
         data: updatedCart
     };
 }
