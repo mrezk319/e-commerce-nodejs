@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { keyHash } from "../services/user-service";
 import userModel from "../models/user-model";
 
 export const validateJwt = async (
@@ -14,7 +13,7 @@ export const validateJwt = async (
             res.status(401).json({ message: 'Unauthorized' });
             return;
         }
-        jwt.verify(token, keyHash, async (err, payload: any) => {
+        jwt.verify(token, process.env.JWT_SECRET, async (err, payload: any) => {
             if (err) {
                 console.log(err);
                 res.status(401).json({ message: 'Invalid token' });

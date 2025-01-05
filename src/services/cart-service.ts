@@ -209,5 +209,19 @@ interface ICheckout {
 export const checkout = async ({ userId, address }: ICheckout) => {
     if (!address) { return { success: false, message: 'Address is required', }; } console.log('Fetching active cart for user:', userId); const activeCart = await getActiveCarts({ userId }); if (!activeCart || !activeCart.items || activeCart.items.length === 0) {
         return { status: false, message: "There is no active cart" };
-    } console.log('Active cart found:', activeCart); const orderItems: IOrderItem[] = []; for (const item of activeCart.items) { console.log('Fetching product for item:', item); const product = await productModel.findById(item.productId); if (!product) { return { status: false, message: `Product with id ${item.productId} not found` }; } const orderItem: IOrderItem = { productName: product.title, unitPrice: product.price, quantity: item.quantity, img: product.image }; orderItems.push(orderItem); } console.log('Order items created:', orderItems); const order = await orderModel.create({ userId: userId, orderItems: orderItems, total: activeCart.totalAmount, address: address }); console.log('Order created:', order); await order.save(); activeCart.status = CartStatus.PENDING; await activeCart.save(); return { success: true, message: 'Order created successfully', };
+    } console.log('Active cart found:', activeCart); const orderItems: IOrderItem[] = [];
+    for (const item of activeCart.items) {
+        console.log('Fetching product for item:', item);
+        const product = await productModel.findById(item.productId);
+        if (!product) {
+            return { status: false, message: `Product with id ${item.productId} not found` };
+        }
+
+        const orderItem: IOrderItem = { productName: product.title, unitPrice: product.price, quantity: item.quantity, img: product.image };
+        orderItems.push(orderItem);
+    } console.log('Order items created:', orderItems);
+    const order = await orderModel.create({ userId: userId, orderItems: orderItems, total: activeCart.totalAmount, address: address });
+    console.log('Order created:', order); await order.save(); activeCart.status = CartStatus.PENDING;
+    await activeCart.save();
+    return { success: true, message: 'Order created successfully', };
 };
