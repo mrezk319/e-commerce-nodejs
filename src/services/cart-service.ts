@@ -1,5 +1,6 @@
 import { CartModel, CartStatus } from "../models/cart-model";
-import productMoel from "../models/product-moel";
+import { IOrderItem, orderModel } from "../models/order-model";
+import productModel from "../models/product-moel";
 
 interface CreateCartForUser {
     userId: string;
@@ -32,7 +33,6 @@ interface AddItemToCart {
 }
 
 export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToCart) => {
-    // Input validations
     if (!userId || !productId || !quantity) {
         return {
             success: false,
@@ -48,7 +48,7 @@ export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToC
     }
 
     const cart = await getActiveCarts({ userId });
-    const product = await productMoel.findById(productId);
+    const product = await productModel.findById(productId);
 
     if (!product) {
         return {
@@ -81,7 +81,7 @@ export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToC
             price: quantity * product.price
         });
     }
-    
+
     cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
 
     const updatedCart = await cart.save();
@@ -94,7 +94,7 @@ export const addItemsToCart = async ({ userId, productId, quantity }: AddItemToC
 
 async function recalculateCartPrices(cart: any) {
     for (const item of cart.items) {
-        const product = await productMoel.findById(item.productId);
+        const product = await productModel.findById(item.productId);
         item.price = item.quantity * product.price;
     }
     cart.totalAmount = cart.items.reduce((total, item) => total + item.price, 0);
@@ -106,9 +106,9 @@ export async function updateItemToCart({ userId, productId, quantity }: {
     productId: string;
     quantity: number;
 }) {
-    const cart = await CartModel.findOne({ 
-        userId, 
-        status: CartStatus.ACTIVE 
+    const cart = await CartModel.findOne({
+        userId,
+        status: CartStatus.ACTIVE
     });
 
     if (!cart) {
@@ -118,7 +118,7 @@ export async function updateItemToCart({ userId, productId, quantity }: {
         };
     }
 
-    const itemIndex = cart.items.findIndex(item => 
+    const itemIndex = cart.items.findIndex(item =>
         item.productId.toString() === productId
     );
 
@@ -157,7 +157,7 @@ export async function deleteItemFromCart({ userId, productId }: {
         };
     }
 
-    const itemIndex = cart.items.findIndex(item => 
+    const itemIndex = cart.items.findIndex(item =>
         item.productId.toString() === productId
     );
 
@@ -201,3 +201,13 @@ export async function clearCart({ userId }: { userId: string }) {
         data: updatedCart
     };
 }
+
+interface ICheckout {
+    userId: string;
+    address: string;
+}
+export const checkout = async ({ userId, address }: ICheckout) => {
+    if (!address) { return { success: false, message: 'Address is required', }; } console.log('Fetching active cart for user:', userId); const activeCart = await getActiveCarts({ userId }); if (!activeCart || !activeCart.items || activeCart.items.length === 0) {
+        return { status: false, message: "There is no active cart" };
+    } console.log('Active cart found:', activeCart); const orderItems: IOrderItem[] = []; for (const item of activeCart.items) { console.log('Fetching product for item:', item); const product = await productModel.findById(item.productId); if (!product) { return { status: false, message: `Product with id ${item.productId} not found` }; } const orderItem: IOrderItem = { productName: product.title, unitPrice: product.price, quantity: item.quantity, img: product.image }; orderItems.push(orderItem); } console.log('Order items created:', orderItems); const order = await orderModel.create({ userId: userId, orderItems: orderItems, total: activeCart.totalAmount, address: address }); console.log('Order created:', order); await order.save(); activeCart.status = CartStatus.PENDING; await activeCart.save(); return { success: true, message: 'Order created successfully', };
+};

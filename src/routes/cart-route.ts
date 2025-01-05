@@ -1,5 +1,5 @@
 import express from "express";
-import { addItemsToCart, clearCart, deleteItemFromCart, getActiveCarts, updateItemToCart } from "../services/cart-service";
+import { addItemsToCart, checkout, clearCart, deleteItemFromCart, getActiveCarts, updateItemToCart } from "../services/cart-service";
 import { CartStatus } from "../models/cart-model";
 import { validateJwt } from "../middlwares/validate-jwt";
 
@@ -58,5 +58,11 @@ route.delete('/clear', validateJwt, async (req, res) => {
     }
 });
 
+route.post('/checkout', validateJwt, async (req, res) => {
+    const userId = req.user._id;
+    const { address } = req.body;
+    const response = await checkout({ userId, address: address });
+    res.send(response);
+});
 export default route;
 
